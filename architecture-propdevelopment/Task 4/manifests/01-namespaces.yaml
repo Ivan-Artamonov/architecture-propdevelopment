@@ -1,0 +1,36 @@
+# Namespace по доменам компании (см. roles.md, раздел 1)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sales
+  labels: {domain: sales, data-class: confidential}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: utilities
+  labels: {domain: utilities, data-class: confidential}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: finance
+  labels: {domain: finance, data-class: confidential}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: data
+  labels: {domain: data, data-class: internal}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: smart-home
+  labels: {domain: smart-home, data-class: confidential}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: platform
+  labels: {domain: platform, data-class: internal}
