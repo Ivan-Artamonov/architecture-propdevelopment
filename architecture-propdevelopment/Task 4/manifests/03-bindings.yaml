@@ -1,0 +1,80 @@
+# Связь групп пользователей с ролями (roles.md, раздел 3).
+# Субъект - группа, а не человек: состав группы меняется в сертификатах,
+# привязки при этом трогать не нужно.
+
+---
+# platform-admins -> cluster-admin (встроенная роль)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: platform-admins-cluster-admin
+subjects:
+  - kind: Group
+    name: platform-admins
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# devops -> cluster-configurator
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: devops-cluster-configurator
+subjects:
+  - kind: Group
+    name: devops
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: cluster-configurator
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# observers -> view (встроенная роль), просмотр во всех namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: observers-view
+subjects:
+  - kind: Group
+    name: observers
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# security -> security-auditor
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: security-auditor-binding
+subjects:
+  - kind: Group
+    name: security
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: security-auditor
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# team-sales -> namespace-maintainer, только в namespace sales.
+# Для остальных доменов такие же привязки создает 05-apply-all.sh
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: team-namespace-maintainer
+  namespace: sales
+subjects:
+  - kind: Group
+    name: team-sales
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: namespace-maintainer
+  apiGroup: rbac.authorization.k8s.io

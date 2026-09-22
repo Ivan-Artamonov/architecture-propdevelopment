@@ -1,0 +1,96 @@
+# Роли из roles.md, раздел 3.
+# cluster-admin и view берем встроенные, здесь только свои три роли.
+
+---
+# 1. cluster-configurator - настройка кластера без секретов и без правки RBAC.
+#    Группа: devops
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cluster-configurator
+rules:
+  # namespace и квоты
+  - apiGroups: [""]
+    resources: [namespaces, resourcequotas, limitranges]
+    verbs: [get, list, watch, create, update, patch, delete]
+  # сетевые политики и ingress
+  - apiGroups: [networking.k8s.io]
+    resources: [networkpolicies, ingresses, ingressclasses]
+    verbs: [get, list, watch, create, update, patch, delete]
+  # хранилище
+  - apiGroups: [storage.k8s.io]
+    resources: [storageclasses, volumeattachments, csidrivers]
+    verbs: [get, list, watch, create, update, patch, delete]
+  # расширения API
+  - apiGroups: [apiextensions.k8s.io]
+    resources: [customresourcedefinitions]
+    verbs: [get, list, watch, create, update, patch, delete]
+  # узлы: смотреть и выводить из обслуживания
+  - apiGroups: [""]
+    resources: [nodes]
+    verbs: [get, list, watch, patch, update]
+  # общий обзор рабочих нагрузок, чтобы видеть последствия своих настроек
+  - apiGroups: ["", apps, batch]
+    resources: [pods, services, deployments, statefulsets, daemonsets, jobs, events]
+    verbs: [get, list, watch]
+  # секретов и RBAC здесь нет сознательно
+
+---
+# 2. security-auditor - привилегированная роль ИБ: видит все, не меняет ничего.
+#    Группа: security
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: security-auditor
+rules:
+  # вся модель прав, включая чужие привязки
+  - apiGroups: [rbac.authorization.k8s.io]
+    resources: [roles, clusterroles, rolebindings, clusterrolebindings]
+    verbs: [get, list, watch]
+  # привилегия: чтение секретов во всех namespace
+  - apiGroups: [""]
+    resources: [secrets]
+    verbs: [get, list, watch]
+  # учетные записи, узлы, конфигурация
+  - apiGroups: [""]
+    resources: [serviceaccounts, namespaces, nodes, pods, configmaps, services, events]
+    verbs: [get, list, watch]
+  - apiGroups: [networking.k8s.io]
+    resources: [networkpolicies, ingresses]
+    verbs: [get, list, watch]
+  - apiGroups: [policy]
+    resources: [poddisruptionbudgets]
+    verbs: [get, list, watch]
+  - apiGroups: [apps, batch]
+    resources: [deployments, statefulsets, daemonsets, jobs, cronjobs]
+    verbs: [get, list, watch]
+  # проверить, кто и что может делать
+  - apiGroups: [authorization.k8s.io]
+    resources: [subjectaccessreviews]
+    verbs: [create]
+  # глаголов записи нет ни в одном правиле
+
+---
+# 3. namespace-maintainer - работа команды в своем домене.
+#    Создается в каждом namespace. Группы: team-<домен>
+#    Здесь шаблон для sales, остальные создает 03-bindings.sh
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: namespace-maintainer
+  namespace: sales
+rules:
+  - apiGroups: ["", apps, batch]
+    resources:
+      [pods, services, configmaps, endpoints, persistentvolumeclaims, events,
+       deployments, statefulsets, daemonsets, replicasets, jobs, cronjobs]
+    verbs: [get, list, watch, create, update, patch, delete]
+  # масштабирование
+  - apiGroups: [apps]
+    resources: [deployments/scale, statefulsets/scale]
+    verbs: [get, update, patch]
+  # разбор инцидента: логи, консоль, проброс порта
+  - apiGroups: [""]
+    resources: [pods/log, pods/exec, pods/portforward]
+    verbs: [get, list, create]
+  # секретов нет: их читает только security-auditor
